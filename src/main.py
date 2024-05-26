@@ -24,10 +24,47 @@ def main():
     fps = 60
 
     step = 100
-    light_source = Light(CENTER[0], CENTER[1], 150)
-    sphere = Sphere(150, CENTER[0], CENTER[1], 0, (170, 169, 173))
+    light_source = Light(CENTER[0], CENTER[1], 300)
     observer = (CENTER[0], CENTER[1], 800)
-    phong = Phong(screen, light_source, observer, 0.1, 0.4, 0.9, 150, 0.6, 1)
+
+    rotation = []
+
+    # Metallic
+    sphere = Sphere(150, CENTER[0], CENTER[1], 0, (170, 169, 173))
+    phong = Phong(screen, light_source, observer, 0.9, 0.4, 0.9, 150, 0.9, 1)
+    rotation.append((sphere, phong))
+
+    # Wooden
+    sphere = Sphere(150, CENTER[0], CENTER[1], 0, (129, 84, 56))
+    phong = Phong(screen, light_source, observer, 0.5, 0.9, 0.1, 100, 0.5, 1)
+    rotation.append((sphere, phong))
+
+    # Brick
+    sphere = Sphere(150, CENTER[0], CENTER[1], 0, (255, 87, 51))
+    phong = Phong(screen, light_source, observer, 0.3, 0.1, 0.8, 10, 0.8, 1)
+    rotation.append((sphere, phong))
+
+    # Brick
+    sphere = Sphere(150, CENTER[0], CENTER[1], 0, (255, 0, 255))
+    phong = Phong(screen, light_source, observer, 0.5, 0.4, 0.4, 200, 0.8, 1)
+    rotation.append((sphere, phong))
+
+    # Gold
+    sphere = Sphere(150, CENTER[0], CENTER[1], 0, (229, 184, 11))
+    phong = Phong(screen, light_source, observer, 0.24725, 0.797357, 0.34615, 83, 1, 1)
+    rotation.append((sphere, phong))
+
+    # Chrome
+    sphere = Sphere(150, CENTER[0], CENTER[1], 0, (224, 224, 224))
+    phong = Phong(screen, light_source, observer, 0.25, 0.774597, 0.4, 77, 1, 1)
+    rotation.append((sphere, phong))
+
+
+    selected = len(rotation) - 1
+
+    # Dunno
+    # sphere = Sphere(150, CENTER[0], CENTER[1], 0, (255, 255, 255))
+    # phong = Phong(screen, light_source, observer, 0.5, 0.25, 0.75, 100, 0.8, 1)
 
     while running:
         for event in pg.event.get():
@@ -53,6 +90,11 @@ def main():
                 if event.key == pg.K_LCTRL:
                     light_source.move(0, step, 0)
                     print(light_source.get_position())
+                if event.key == pg.K_n:
+                    selected = (selected + 1) % len(rotation)
+                    sphere, phong = rotation[selected]
+
+
                 if event.key == pg.K_o:
                     filename = f"screenshot_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.png"
                     pg.image.save(pg.display.get_surface(), filename)
@@ -65,7 +107,6 @@ def main():
 
         phong.render_sphere(sphere)
         pg.draw.circle(screen, pg.Color("white"), light_source.get_position_2d(), 5)
-        print("done")
 
         pg.display.flip()
         clock.tick(fps)
