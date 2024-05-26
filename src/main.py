@@ -1,37 +1,13 @@
 from datetime import datetime
 
 import pygame as pg
-import math
 from WindowConfig import WindowConfig
-from Camera import Camera
-from Renderer import Renderer
-import numpy as np
+from src.light import Light
+from src.phong import Phong
+from src.sphere import Sphere
 
 window_config = WindowConfig()
-
-center = (window_config.get_width() // 2, window_config.get_height() // 2)
-radius = 200
-
-
-def draw_sphere(renderer):
-    """Draw the 3D sphere by projecting points onto the 2D screen"""
-    for theta in range(0, 360, 2):
-        for phi in range(0, 360, 2):
-            theta_rad = math.radians(theta)
-            phi_rad = math.radians(phi)
-            x = radius * math.sin(phi_rad) * math.cos(theta_rad)
-            y = radius * math.sin(phi_rad) * math.sin(theta_rad)
-            z = radius * math.cos(phi_rad)
-
-            screen_x, screen_y = renderer.project(np.array([x, y, z]))
-
-            # Calculate shading based on z value (depth)
-            shade = 255 - int((z + radius) / (2 * radius) * 255)
-            color = (shade, shade, shade)
-
-            if 0 <= screen_x < window_config.get_width() and 0 <= screen_y < window_config.get_height():
-                pg.display.get_surface().set_at((screen_x, screen_y), color)
-
+CENTER = (window_config.get_width() // 2, window_config.get_height() // 2)
 
 def config():
     pg.display.set_mode((window_config.get_width(), window_config.get_height()))
@@ -42,12 +18,16 @@ def main():
     pg.init()
     config()
     clock = pg.time.Clock()
+    screen = pg.display.get_surface()
 
     running = True
     fps = 60
-    camera = Camera()
-    amount = 45
-    renderer = Renderer(list(), camera, window_config)
+
+    step = 100
+    light_source = Light(CENTER[0], CENTER[1], 150)
+    sphere = Sphere(150, CENTER[0], CENTER[1], 0, (170, 169, 173))
+    observer = (CENTER[0], CENTER[1], 800)
+    phong = Phong(screen, light_source, observer, 0.1, 0.4, 0.9, 150, 0.6, 1)
 
     while running:
         for event in pg.event.get():
@@ -55,36 +35,24 @@ def main():
                 running = False
 
             elif event.type == pg.KEYDOWN:
-                if event.key == pg.K_LEFT:
-                    camera.move_left(amount)
-                if event.key == pg.K_RIGHT:
-                    camera.move_right(amount)
                 if event.key == pg.K_UP:
-                    camera.move_forward(amount)
+                    light_source.move(0, 0, -step)
+                    print(light_source.get_position())
                 if event.key == pg.K_DOWN:
-                    camera.move_backward(amount)
+                    light_source.move(0, 0, step)
+                    print(light_source.get_position())
+                if event.key == pg.K_LEFT:
+                    light_source.move(-step, 0, 0)
+                    print(light_source.get_position())
+                if event.key == pg.K_RIGHT:
+                    light_source.move(step, 0, 0)
+                    print(light_source.get_position())
                 if event.key == pg.K_LSHIFT:
-                    camera.move_up(amount)
+                    light_source.move(0, -step, 0)
+                    print(light_source.get_position())
                 if event.key == pg.K_LCTRL:
-                    camera.move_down(amount)
-                if event.key == pg.K_w:
-                    camera.rotate_roll(amount)
-                if event.key == pg.K_s:
-                    camera.rotate_roll(-amount)
-                if event.key == pg.K_q:
-                    camera.rotate_pitch(-amount)
-                if event.key == pg.K_e:
-                    camera.rotate_pitch(amount)
-                if event.key == pg.K_a:
-                    camera.rotate_yaw(amount)
-                if event.key == pg.K_d:
-                    camera.rotate_yaw(-amount)
-                if event.key == pg.K_EQUALS:
-                    camera.zoom_in()
-                if event.key == pg.K_MINUS:
-                    camera.zoom_out()
-                if event.key == pg.K_0:
-                    camera.reset_zoom()
+                    light_source.move(0, step, 0)
+                    print(light_source.get_position())
                 if event.key == pg.K_o:
                     filename = f"screenshot_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.png"
                     pg.image.save(pg.display.get_surface(), filename)
@@ -93,8 +61,12 @@ def main():
                     running = False
 
 
-        pg.display.get_surface().fill((0, 0, 0))
-        draw_sphere(renderer)
+        pg.display.get_surface().fill((pg.Color("black")))
+
+        phong.render_sphere(sphere)
+        pg.draw.circle(screen, pg.Color("white"), light_source.get_position_2d(), 5)
+        print("done")
+
         pg.display.flip()
         clock.tick(fps)
 
