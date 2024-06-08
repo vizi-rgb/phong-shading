@@ -6,7 +6,7 @@ from src.sphere import Sphere
 
 class Phong:
 
-    def __init__(self, screen, light: Light, observer, k_a, k_s, k_d, n, i_a, i_p, f_att=1):
+    def __init__(self, screen, light: Light, observer, k_a, k_s, k_d, n, i_a, i_p, f_att=None):
         self.screen = screen
         self.light = light
         self.observer = observer
@@ -32,11 +32,24 @@ class Phong:
         N_L = max(np.dot(N, L), 0.0)
         R_V = max(np.dot(R, V), 0.0)
 
-        I = self.k_a * self.i_a + self.i_p * (self.f_att * self.k_d * N_L + self.f_att * self.k_s * R_V ** self.n)
-        return I
+        if not self.f_att:
+            distance = self.get_distance(point, self.light.get_position())
+            c1 = 0.1
+            c2 = 0.001
+            c3 = 1e-6
+            f_att = min(1 / (c1 + c2 * distance + c3 * distance ** 2), 1)
+        else:
+            f_att = self.f_att
+
+        I = self.k_a * self.i_a + f_att * self.i_p * (self.k_d * N_L + self.k_s * R_V ** self.n)
+        return np.clip(I, 0, 1)
+
+    def get_distance(self, point1, point2):
+        distance = np.linalg.norm(np.array(point1) - np.array(point2))
+        return distance
 
     def render_sphere(self, sphere: Sphere):
         for point in sphere.points:
             I = self.phong_shading(point, sphere.get_center())
-            color = np.clip(np.dot(sphere.color, I), 0, 255)
+            color = np.clip(np.multiply(sphere.color, I), 0, 255)
             self.screen.set_at((point[0], point[1]), color)
